@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
+import json
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity,get_jwt
@@ -49,29 +50,22 @@ with app.app_context():
 
 class Login(Resource):
     def post(self):
-        try :
-            data2 = request.get_json()
-            dataUsername = data2["username"]
-            dataPassword = data2["password"]
-            queryUsername = [data.username for data in AuthModel.query.all()]
-            queryPassword = [data.password for data in AuthModel.query.all()]
-            if queryUsername:
-                authenticated_user = bcrypt.check_password_hash(queryPassword[0], dataPassword)
+            dataUsername = request.json["username"]
+            dataPassword = request.json["password"]
+            data = db.session.execute(db.select(AuthModel).filter_by(username=dataUsername)).scalar_one()
+            user = data.username
+            hashPassword = data.password
+            if user:
+                authenticated_user = bcrypt.check_password_hash(hashPassword, dataPassword)
                 if authenticated_user :
-                    access_token = create_access_token(identity=queryUsername[0],expires_delta=ACCESS_EXPIRES)
+                    access_token = create_access_token(identity=user,expires_delta=ACCESS_EXPIRES)
                     response = {
                         "msg" :"anda berhasil login",
                         "code" : 200,
-                        "username" : queryUsername[0],
+                        "username" : user,
                         "token" : access_token
                     }
-                    return jsonify(response)
-        except Exception as e:
-            print(e)
-            response = {
-                {"msg":"query failed"}
-            }
-            return jsonify(response)       
+                    return make_response(jsonify(response))   
     
 
 class Register(Resource):
