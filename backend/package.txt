@@ -5,4 +5,3 @@ flask-mysqldb
 flask-cors
 flask-bcrypt
 flask-jwt-extended
-flask-migrate
